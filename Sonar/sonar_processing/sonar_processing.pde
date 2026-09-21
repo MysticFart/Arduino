@@ -439,6 +439,99 @@ void updateAndDrawHistory(){
   }
 }
 
+//Serial event
+
+void serialEvent(Serial port){
+
+  /*
+   * Processing calls this function whenever the serial
+   * buffer reaches the delimiter defined by bufferUntil().
+   *
+   * Arduino sends:
+   *
+   *     angle,distance.
+   *
+   * Example:
+   *
+   *     90,12.
+   */
+
+  String incoming = port.readStringUntil('.');
+
+  if (incoming == null) {
+    return;
+  }
+
+  // Remove the final '.'
+  incoming = incoming.substring(
+    0,
+    incoming.length() - 1
+    );
+
+  // Remove whitespace/newlines
+  incoming = trim(incoming);
+
+  // Ignore empty messages
+  if (incoming.length() == 0) {
+    return;
+  }
+
+  // Split:
+  //
+  // "90,12"
+  //
+  // into:
+  //
+  // ["90", "12"]
+
+  String[] values =
+    split(incoming, ',');
+
+  // We expect exactly two values
+  if (values.length == 2) {
+
+    try {
+
+      int angle =
+        Integer.parseInt(
+          trim(values[0])
+          );
+
+      int distance =
+        Integer.parseInt(
+          trim(values[1])
+          );
+
+      // Update radar data
+      currentAngle = angle;
+      currentDistance = distance;
+
+    } 
+    catch (NumberFormatException e) {
+
+      // Ignore malformed serial data
+      println(
+        "Invalid serial data: " +
+        incoming
+        );
+    }
+  }
+}
+
+
+// Stop Serial Port When Sketch Exits
+
+void dispose() {
+
+  if (serialPort != null) {
+    serialPort.stop();
+    println("Serial port closed.");
+  }
+
+  super.dispose();
+
+}
+
 
 
 //RadarPoint class
