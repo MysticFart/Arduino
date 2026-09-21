@@ -13,7 +13,7 @@
  *     47,11.
  *
  * IMPORTANT FOR WINDOWS:
- *     Change PORT_NAME below to your Arduino COM port.
+ *     Change PORT below to your Arduino COM port.
  *
  * Example:
  *     "COM5"
@@ -21,12 +21,13 @@
 
 import processing.serial.*;
 
-// ============================================================
+
 // Global Variables
-// ============================================================
+
 
 // Serial port object
 Serial serialPort;
+String PORT = "";
 
 // Font for displaying text
 PFont font;
@@ -34,16 +35,16 @@ PFont font;
 // String used to buffer incoming serial data
 String inString = "";
 
-// ============================================================
+
 // Window Dimensions
-// ============================================================
+
 
 int screenWidth = 800;
 int screenHeight = 450;
 
-// ============================================================
+
 // Radar Properties
-// ============================================================
+
 
 float radarRadius = 350;
 
@@ -53,55 +54,37 @@ float radarCenterX = screenWidth / 2.0;
 // Position the radar baseline near the bottom of the window
 float radarCenterY = screenHeight - 100;
 
-// ============================================================
-// Serial / Arduino Settings
-// ============================================================
 
-// CHANGE THIS TO YOUR ARDUINO'S COM PORT.
-//
-// You can find it in:
-// Arduino IDE -> Tools -> Port
-//
-// Example:
-// "COM3"
-// "COM4"
-// "COM5"
-//
-String PORT_NAME = "COM5";
+// Serial / Arduino Settings
+
+String PORT_NAME = PORT;
 
 // Must match Serial.begin(...) in your Arduino code
 int BAUD_RATE = 9600;
 
-// ============================================================
+
 // Current Radar Data
-// ============================================================
+
 
 int currentAngle = 0;
 int currentDistance = 0;
 
-// ============================================================
+
 // Point History
-// ============================================================
+
 
 // Stores previously detected points so that they can fade away.
 ArrayList<RadarPoint> pointHistory = new ArrayList<RadarPoint>();
 
 
-// ============================================================
 // Setup
-// ============================================================
+
 
 void setup() {
 
-  /*
-   * This function runs once when the program starts.
-   * It sets up the display window, initializes serial
-   * communication, and loads the font.
-   */
 
-  // ----------------------------------------------------------
   // Window and Graphics Setup
-  // ----------------------------------------------------------
+
 
   size(800, 450);
 
@@ -111,9 +94,7 @@ void setup() {
   font = createFont("Monospaced", 20);
   textFont(font);
 
-  // ----------------------------------------------------------
   // Serial Communication Setup
-  // ----------------------------------------------------------
 
   println("Available Serial Ports:");
   printArray(Serial.list());
