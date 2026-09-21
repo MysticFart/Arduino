@@ -139,3 +139,319 @@ void setup() {
     println("3. The Arduino IDE Serial Monitor is closed.");
   }
 }
+
+//Draw
+
+void draw (){
+  
+  // Dark green background
+  background(0, 20, 0);
+
+  // Draw radar grid
+  drawRadarGrid();
+
+  // Draw text information
+  drawTextLabels();
+
+  // Draw current sweep line
+  drawSweepLine(currentAngle);
+
+  // Draw current detected object
+  drawDetectedPoints();
+
+  // Draw fading history
+  updateAndDrawHistory();
+  
+}
+
+//Radar Grid
+
+void drawRadarGrid() {
+  
+  /*
+   * Draws the concentric semi-circles and radial lines
+   * of the radar.
+   */
+
+  stroke(0, 150, 0);
+  noFill();
+  strokeWeight(2);
+
+
+  // Draw 2 concentric semi-circles
+
+
+  for (int i = 1; i < 3; i++) {
+
+    float radius = i * (radarRadius / 2.0);
+
+    /*
+     * Draw only the top half of the circle.
+     *
+     * PI     = 180 degrees
+     * TWO_PI = 360 degrees
+     */
+    arc(
+      radarCenterX,
+      radarCenterY,
+      radius * 2,
+      radius * 2,
+      PI,
+      TWO_PI
+      );
+  }
+
+
+  // Horizontal closing line
+
+
+  line(
+    radarCenterX - radarRadius,
+    radarCenterY,
+    radarCenterX + radarRadius,
+    radarCenterY
+    );
+
+
+  // Draw 5 radial lines
+
+
+  /*
+   * These correspond to:
+   *
+   * 180°
+   * 135°
+   * 90°
+   * 45°
+   * 0°
+   *
+   * across the 180-degree radar.
+   */
+
+  for (int i = 0; i < 5; i++) {
+
+    float angle = radians((i * 45) - 180);
+
+    float x2 =
+      radarCenterX +
+      radarRadius * cos(angle);
+
+    float y2 =
+      radarCenterY +
+      radarRadius * sin(angle);
+
+    line(
+      radarCenterX,
+      radarCenterY,
+      x2,
+      y2
+      );
+  }
+}
+
+//Text Labels
+
+void drawTextLabels() {
+  
+  /*
+   * Displays information about the current radar reading.
+   */
+
+  fill(0, 200, 0);
+  noStroke();
+
+
+  // Distance labels
+
+
+  for (int i = 1; i < 3; i++) {
+
+    float radiusText =
+      i * (radarRadius / 2.0);
+
+    text(
+      i * 10 + " cm",
+      radarCenterX + radiusText + 5,
+      radarCenterY - 5
+      );
+  }
+
+
+  // Current angle
+
+
+  text(
+    "Angle: " + currentAngle + " deg",
+    20,
+    40
+    );
+
+
+  // Current distance
+
+
+  text(
+    "Distance: " + currentDistance + " cm",
+    20,
+    70
+    );
+
+
+  // Title
+
+
+  text(
+    "Radar Display",
+    width / 2 - 80,
+    40
+    );
+
+}
+
+
+//Sweep Line
+
+void drawSweepLine(int angle) {
+  
+  /*
+   * Draws the moving line that sweeps across the radar.
+   */
+
+  stroke(0, 255, 0, 150);
+  strokeWeight(3);
+
+  /*
+   * The Arduino reports:
+   *
+   *     0°   -> left
+   *     90°  -> center
+   *     180° -> right
+   *
+   * The original Python sketch converted this using:
+   *
+   *     radians(angle - 180)
+   */
+
+  float radAngle = radians(angle - 180);
+
+  float endX =
+    radarCenterX +
+    radarRadius * cos(radAngle);
+
+  float endY =
+    radarCenterY +
+    radarRadius * sin(radAngle);
+
+  line(
+    radarCenterX,
+    radarCenterY,
+    endX,
+    endY
+    );
+}
+
+
+//Detected Points
+
+void drawDetectedPoints(){
+  /*
+   * Draws a point on the radar for the current detection.
+   */
+
+  float maxDist = 20.0;
+
+  // Only display objects between 0 and 20 cm
+  if (currentDistance > 0 &&
+      currentDistance < maxDist) {
+
+    // Current detection = red
+    stroke(255, 0, 0);
+    strokeWeight(5);
+
+    // Convert angle to radians
+    float radAngle =
+      radians(currentAngle - 180);
+
+    // Convert distance from 0-20 cm
+    // into 0-radarRadius pixels
+    float mappedDist =
+      map(
+        currentDistance,
+        0,
+        maxDist,
+        0,
+        radarRadius
+        );
+
+    // Calculate point coordinates
+    float pointX =
+      radarCenterX +
+      mappedDist * cos(radAngle);
+
+    float pointY =
+      radarCenterY +
+      mappedDist * sin(radAngle);
+
+    // Draw current detection
+    point(pointX, pointY);
+
+    // Add point to fading history
+    pointHistory.add(
+      new RadarPoint(
+        pointX,
+        pointY,
+        255
+        )
+      );
+  }
+}
+
+
+//Update and Draw History
+
+void updateAndDrawHistory(){
+
+  /*
+   * Draws and fades out old points to create a trail effect.
+   */
+
+  // Go backwards so that removing elements is safe
+  for (int i = pointHistory.size() - 1; i >= 0; i--) {
+
+    RadarPoint p = pointHistory.get(i);
+
+    // Draw fading point
+    stroke(0, p.age, 0);
+    strokeWeight(4);
+
+    point(
+      p.x,
+      p.y
+      );
+
+    // Reduce brightness
+    p.age -= 2;
+
+    // Remove old points
+    if (p.age <= 0) {
+      pointHistory.remove(i);
+    }
+  }
+}
+
+
+
+//RadarPoint class
+
+class RadarPoint {
+  
+  float x;
+  float y;
+  float age;
+  
+  RadarPoint(float x, float y, float age) {
+    this.x = x;
+    this.y = y;
+    this.age = age;
+  }
+}
